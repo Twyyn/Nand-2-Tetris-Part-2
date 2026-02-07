@@ -1,4 +1,4 @@
-mod command;
+pub mod command;
 use command::{Command, Segment};
 
 pub struct Parser {
@@ -7,11 +7,12 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(lines: Vec<String>) -> Self {
-        Self { lines, current: 1 }
+    pub fn new(source: String) -> Self {
+        let lines: Vec<String> = source.lines().map(String::from).collect();
+        Self { lines, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Command {
+    pub fn parse(&mut self) -> Vec<Command> {
         todo!()
     }
 
