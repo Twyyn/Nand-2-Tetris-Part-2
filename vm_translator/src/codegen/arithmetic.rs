@@ -1,18 +1,18 @@
 use indoc::formatdoc;
 
-pub enum Arithmetic<'a> {
+pub enum Arithmetic {
     Add,
     Sub,
     Neg,
     Not,
-    Eq(&'a str),
-    Gt(&'a str),
-    Lt(&'a str),
+    Eq(u16),
+    Gt(u16),
+    Lt(u16),
     And,
     Or,
 }
 
-impl<'a> Arithmetic<'a> {
+impl Arithmetic {
     pub fn to_asm(&self) -> String {
         match self {
             Self::Add => formatdoc! {"
@@ -39,7 +39,7 @@ impl<'a> Arithmetic<'a> {
                 A=M-1
                 M=!M
             "},
-            Self::Eq(label) => formatdoc! {"
+            Self::Eq(label_num) => formatdoc! {"
                 @SP
                 AM=M-1
                 D=M
@@ -47,25 +47,25 @@ impl<'a> Arithmetic<'a> {
                 AM=M-1
                 D=M-D
 
-                @EQ_TRUE_{label}
+                @EQ_TRUE_{label_num}
                 D;JEQ
 
                 @SP
                 A=M
                 M=0
-                @EQ_END_{label}
+                @EQ_END_{label_num}
                 0;JMP
 
-                (EQ_TRUE_{label})
+                (EQ_TRUE_{label_num})
                 @SP
                 A=M
                 M=-1
 
-                (EQ_END_{label})
+                (EQ_END_{label_num})
                 @SP
                 M=M+1
             "},
-            Self::Gt(label) => formatdoc! {"
+            Self::Gt(label_num) => formatdoc! {"
                 @SP
                 AM=M-1
                 D=M
@@ -73,25 +73,25 @@ impl<'a> Arithmetic<'a> {
                 AM=M-1
                 D=M-D
 
-                @GT_TRUE_{label}
+                @GT_TRUE_{label_num}
                 D;JGT
 
                 @SP
                 A=M
                 M=0
-                @GT_END_{label}
+                @GT_END_{label_num}
                 0;JMP
 
-                (GT_TRUE_{label})
+                (GT_TRUE_{label_num})
                 @SP
                 A=M
                 M=-1
 
-                (GT_END_{label})
+                (GT_END_{label_num})
                 @SP
                 M=M+1
             "},
-            Self::Lt(label) => formatdoc! {"
+            Self::Lt(label_num) => formatdoc! {"
                 @SP
                 AM=M-1
                 D=M
@@ -99,21 +99,21 @@ impl<'a> Arithmetic<'a> {
                 AM=M-1
                 D=M-D
 
-                @LT_TRUE_{label}
+                @LT_TRUE_{label_num}
                 D;JLT
 
                 @SP
                 A=M
                 M=0
-                @LT_END_{label}
+                @LT_END_{label_num}
                 0;JMP
 
-                (LT_TRUE_{label})
+                (LT_TRUE_{label_num})
                 @SP
                 A=M
                 M=-1
 
-                (LT_END_{label})
+                (LT_END_{label_num})
                 @SP
                 M=M+1
             "},
