@@ -20,7 +20,7 @@ impl Memory<'_> {
                 @SP
                 M=M+1
             "},
-            Self::Segment(seg, index) => formatdoc! {"
+            Self::Segment(segment, index) => formatdoc! {"
                 @{seg}
                 D=M
                 @{index}
