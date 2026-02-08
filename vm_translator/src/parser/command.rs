@@ -4,7 +4,6 @@ use std::str::FromStr;
 use strum::EnumString;
 
 #[derive(Debug, PartialEq, Eq)]
-
 pub enum Command {
     Push { segment: Segment, index: u16 },
     Pop { segment: Segment, index: u16 },
