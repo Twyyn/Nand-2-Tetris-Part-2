@@ -30,6 +30,12 @@ pub enum ArithmeticCommand {
 pub enum Segment {
     Constant,
     Local,
+    Argument,
+    This,
+    That,
+    Static,
+    Temp,
+    Pointer,
 }
 
 impl fmt::Display for Command {
