@@ -4,14 +4,14 @@ use std::{
     str::FromStr,
 };
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum Command {
     Push { segment: Segment, index: u16 },
     Pop { segment: Segment, index: u16 },
     Arithmetic(ArithmeticCommand),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum ArithmeticCommand {
     Add,
     Sub,
@@ -24,7 +24,7 @@ pub enum ArithmeticCommand {
     Not,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum Segment {
     Constant,
     Local,
