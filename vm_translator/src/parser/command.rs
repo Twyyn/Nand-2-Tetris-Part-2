@@ -11,7 +11,7 @@ pub enum Command {
     Arithmetic(ArithmeticCommand),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum ArithmeticCommand {
     Add,
     Sub,
@@ -24,7 +24,7 @@ pub enum ArithmeticCommand {
     Not,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Segment {
     Constant,
     Local,
