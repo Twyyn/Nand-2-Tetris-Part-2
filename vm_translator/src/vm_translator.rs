@@ -1,6 +1,6 @@
 use crate::codegen::CodeGen;
-use crate::parser::Parser;
 use crate::parser::command::Command;
+use crate::parser::Parser;
 use std::{
     ffi::OsStr,
     fs,
