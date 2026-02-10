@@ -1,7 +1,7 @@
 pub mod command;
-pub mod errors;
+pub mod error;
 use command::Command;
-use errors::ParseError;
+use error::ParseError;
 
 #[derive(Debug)]
 pub struct Parser;

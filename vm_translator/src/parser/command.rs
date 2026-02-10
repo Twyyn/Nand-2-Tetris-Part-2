@@ -1,4 +1,4 @@
-use super::errors::ParseError;
+use super::error::ParseError;
 use std::{
     fmt::{self},
     str::FromStr,
@@ -8,11 +8,11 @@ use std::{
 pub enum Command {
     Push { segment: Segment, index: u16 },
     Pop { segment: Segment, index: u16 },
-    Arithmetic(ArithmeticCommand),
+    Operation(OperationCommand),
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum ArithmeticCommand {
+pub enum OperationCommand {
     Add,
     Sub,
     Neg,
@@ -36,7 +36,7 @@ pub enum Segment {
     Pointer,
 }
 
-impl fmt::Display for ArithmeticCommand {
+impl fmt::Display for OperationCommand {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Add => write!(f, "add"),
@@ -52,7 +52,7 @@ impl fmt::Display for ArithmeticCommand {
     }
 }
 
-impl FromStr for ArithmeticCommand {
+impl FromStr for OperationCommand {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -109,7 +109,7 @@ impl fmt::Display for Command {
         match self {
             Self::Push { segment, index } => write!(f, "push {segment} {index}"),
             Self::Pop { segment, index } => write!(f, "pop {segment} {index}"),
-            Self::Arithmetic(command) => write!(f, "{command}"),
+            Self::Operation(command) => write!(f, "{command}"),
         }
     }
 }
@@ -176,8 +176,8 @@ impl FromStr for Command {
             }
 
             (Some(command), None, None) => command
-                .parse::<ArithmeticCommand>()
-                .map(Command::Arithmetic)
+                .parse::<OperationCommand>()
+                .map(Command::Operation)
                 .map_err(|_| ParseError::UnknownCommand(command.to_string())),
 
             _ => Err(ParseError::UnknownCommand(s.to_string())),

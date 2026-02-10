@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub enum Arithmetic {
+pub enum Operation {
     Add,
     Sub,
     Neg,
@@ -58,7 +58,7 @@ fn comparison_asm(prefix: &str, jump: &str, label_count: u16) -> String {
     )
 }
 
-impl Arithmetic {
+impl Operation {
     pub fn to_asm(&self) -> String {
         match self {
             Self::Add => binary_op("+"),

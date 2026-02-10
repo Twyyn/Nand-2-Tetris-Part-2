@@ -1,9 +1,9 @@
-mod arithmetic;
 mod memory;
+mod operation;
 
 use crate::{
-    codegen::{arithmetic::Arithmetic, memory::Memory},
-    parser::command::{ArithmeticCommand, Command, Segment},
+    codegen::{memory::Memory, operation::Operation},
+    parser::command::{Command, OperationCommand, Segment},
 };
 
 #[derive(Debug, Default)]
@@ -22,7 +22,7 @@ impl CodeGen {
                 Self::memory(segment, index, filename).push_to_asm()
             }
             Command::Pop { segment, index } => Self::memory(segment, index, filename).pop_to_asm(),
-            Command::Arithmetic(operation) => self.arithmetic(operation).to_asm(),
+            Command::Operation(operation) => self.operation(operation).to_asm(),
         };
 
         format!("// {command}\n{asm}")
@@ -40,24 +40,24 @@ impl CodeGen {
         }
     }
 
-    fn arithmetic(&mut self, operation: ArithmeticCommand) -> Arithmetic {
+    fn operation(&mut self, operation: OperationCommand) -> Operation {
         match operation {
-            ArithmeticCommand::Add => Arithmetic::Add,
-            ArithmeticCommand::Sub => Arithmetic::Sub,
-            ArithmeticCommand::Neg => Arithmetic::Neg,
-            ArithmeticCommand::Eq | ArithmeticCommand::Gt | ArithmeticCommand::Lt => {
+            OperationCommand::Add => Operation::Add,
+            OperationCommand::Sub => Operation::Sub,
+            OperationCommand::Neg => Operation::Neg,
+            OperationCommand::Eq | OperationCommand::Gt | OperationCommand::Lt => {
                 let label = self.label_count;
                 self.label_count += 1;
                 match operation {
-                    ArithmeticCommand::Eq => Arithmetic::Eq(label),
-                    ArithmeticCommand::Gt => Arithmetic::Gt(label),
-                    ArithmeticCommand::Lt => Arithmetic::Lt(label),
+                    OperationCommand::Eq => Operation::Eq(label),
+                    OperationCommand::Gt => Operation::Gt(label),
+                    OperationCommand::Lt => Operation::Lt(label),
                     _ => unreachable!(),
                 }
             }
-            ArithmeticCommand::And => Arithmetic::And,
-            ArithmeticCommand::Or => Arithmetic::Or,
-            ArithmeticCommand::Not => Arithmetic::Not,
+            OperationCommand::And => Operation::And,
+            OperationCommand::Or => Operation::Or,
+            OperationCommand::Not => Operation::Not,
         }
     }
 
