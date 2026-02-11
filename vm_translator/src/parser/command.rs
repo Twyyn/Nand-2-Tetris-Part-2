@@ -8,11 +8,11 @@ use std::{
 pub enum Command {
     Push { segment: Segment, index: u16 },
     Pop { segment: Segment, index: u16 },
-    Operation(OperationCommand),
+    Operation(Op),
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum OperationCommand {
+pub enum Op {
     Add,
     Sub,
     Neg,
@@ -36,7 +36,7 @@ pub enum Segment {
     Pointer,
 }
 
-impl fmt::Display for OperationCommand {
+impl fmt::Display for Op {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Add => write!(f, "add"),
@@ -52,7 +52,7 @@ impl fmt::Display for OperationCommand {
     }
 }
 
-impl FromStr for OperationCommand {
+impl FromStr for Op {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -176,7 +176,7 @@ impl FromStr for Command {
             }
 
             (Some(command), None, None) => command
-                .parse::<OperationCommand>()
+                .parse::<Op>()
                 .map(Command::Operation)
                 .map_err(|_| ParseError::UnknownCommand(command.to_string())),
 

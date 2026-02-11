@@ -3,7 +3,7 @@ mod operation;
 
 use crate::{
     codegen::{memory::Memory, operation::Operation},
-    parser::command::{Command, OperationCommand, Segment},
+    parser::command::{Command, Op, Segment},
 };
 
 #[derive(Debug, Default)]
@@ -40,24 +40,24 @@ impl CodeGen {
         }
     }
 
-    fn operation(&mut self, operation: OperationCommand) -> Operation {
+    fn operation(&mut self, operation: Op) -> Operation {
         match operation {
-            OperationCommand::Add => Operation::Add,
-            OperationCommand::Sub => Operation::Sub,
-            OperationCommand::Neg => Operation::Neg,
-            OperationCommand::Eq | OperationCommand::Gt | OperationCommand::Lt => {
+            Op::Add => Operation::Add,
+            Op::Sub => Operation::Sub,
+            Op::Neg => Operation::Neg,
+            Op::Eq | Op::Gt | Op::Lt => {
                 let label = self.label_count;
                 self.label_count += 1;
                 match operation {
-                    OperationCommand::Eq => Operation::Eq(label),
-                    OperationCommand::Gt => Operation::Gt(label),
-                    OperationCommand::Lt => Operation::Lt(label),
+                    Op::Eq => Operation::Eq(label),
+                    Op::Gt => Operation::Gt(label),
+                    Op::Lt => Operation::Lt(label),
                     _ => unreachable!(),
                 }
             }
-            OperationCommand::And => Operation::And,
-            OperationCommand::Or => Operation::Or,
-            OperationCommand::Not => Operation::Not,
+            Op::And => Operation::And,
+            Op::Or => Operation::Or,
+            Op::Not => Operation::Not,
         }
     }
 
