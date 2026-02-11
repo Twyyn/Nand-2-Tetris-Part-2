@@ -8,11 +8,13 @@ use std::{
 pub enum Command {
     Push { segment: Segment, index: u16 },
     Pop { segment: Segment, index: u16 },
-    Operation(Op),
+    Operation { operation: OP },
+    Branch { branch: BR },
+    Function { function: Fn },
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum Op {
+pub enum OP {
     Add,
     Sub,
     Neg,
@@ -36,9 +38,50 @@ pub enum Segment {
     Pointer,
 }
 
-impl fmt::Display for Op {
+#[derive(Debug, Clone)]
+pub enum BR {
+    Label { label: String },
+    Jump { label: String },
+    JumpIf { label: String },
+}
+
+#[derive(Debug, Clone)]
+pub enum Fn {
+    Function { name: String, n_vars: u16 },
+    Call { function: String, n_args: u16 },
+    Return,
+}
+
+impl fmt::Display for Command {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Push { segment, index } => write!(f, "push {segment} {index}"),
+            Self::Pop { segment, index } => write!(f, "pop {segment} {index}"),
+            Self::Operation { operation } => write!(f, "{operation}"),
+            Self::Branch { branch } => write!(f, "{branch}"),
+            Self::Function { function } => write!(f, "{function}"),
+        }
+    }
+}
+
+impl fmt::Display for Segment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            Self::Constant => write!(f, "constant"),
+            Self::Local => write!(f, "local"),
+            Self::Argument => write!(f, "argument"),
+            Self::This => write!(f, "this"),
+            Self::That => write!(f, "that"),
+            Self::Static => write!(f, "static"),
+            Self::Temp => write!(f, "temp"),
+            Self::Pointer => write!(f, "pointer"),
+        }
+    }
+}
+
+impl fmt::Display for OP {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
             Self::Add => write!(f, "add"),
             Self::Sub => write!(f, "sub"),
             Self::Neg => write!(f, "neg"),
@@ -52,82 +95,22 @@ impl fmt::Display for Op {
     }
 }
 
-impl FromStr for Op {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "add" => Ok(Self::Add),
-            "sub" => Ok(Self::Sub),
-            "neg" => Ok(Self::Neg),
-            "eq" => Ok(Self::Eq),
-            "gt" => Ok(Self::Gt),
-            "lt" => Ok(Self::Lt),
-            "and" => Ok(Self::And),
-            "or" => Ok(Self::Or),
-            "not" => Ok(Self::Not),
-            _ => Err(()),
-        }
-    }
-}
-
-impl fmt::Display for Segment {
+impl fmt::Display for BR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Constant => write!(f, "constant"),
-            Self::Local => write!(f, "local"),
-            Self::Argument => write!(f, "argument"),
-            Self::This => write!(f, "this"),
-            Self::That => write!(f, "that"),
-            Self::Static => write!(f, "static"),
-            Self::Temp => write!(f, "temp"),
-            Self::Pointer => write!(f, "pointer"),
+        match &self {
+            Self::Label { label } => write!(f, "label {label}"),
+            Self::Jump { label } => write!(f, " goto {label}"),
+            Self::JumpIf { label } => write!(f, "if-goto {label}"),
         }
     }
 }
 
-impl FromStr for Segment {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "constant" => Ok(Self::Constant),
-            "local" => Ok(Self::Local),
-            "argument" => Ok(Self::Argument),
-            "this" => Ok(Self::This),
-            "that" => Ok(Self::That),
-            "static" => Ok(Self::Static),
-            "temp" => Ok(Self::Temp),
-            "pointer" => Ok(Self::Pointer),
-            _ => Err(()),
-        }
-    }
-}
-
-impl fmt::Display for Command {
+impl fmt::Display for Fn {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Push { segment, index } => write!(f, "push {segment} {index}"),
-            Self::Pop { segment, index } => write!(f, "pop {segment} {index}"),
-            Self::Operation(command) => write!(f, "{command}"),
-        }
-    }
-}
-
-impl std::error::Error for ParseError {}
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidSegment(s) => write!(f, "Invalid segment: {s}"),
-            Self::InvalidIndex(s) => write!(f, "Invalid index: {s}"),
-            Self::CannotPopConstant => write!(f, "Cannot pop to constant segment"),
-            Self::UnknownCommand(s) => write!(f, "Unknown command: {s}"),
-            Self::IndexOutOfRange {
-                segment,
-                index,
-                max,
-            } => write!(f, "Invalid index {index} for {segment} (expected 0–{max})"),
+        match &self {
+            Fn::Function { name, n_vars } => write!(f, "Function {name} {n_vars}"),
+            Fn::Call { function, n_args } => write!(f, "Call {function}, {n_args}"),
+            Fn::Return => write!(f, "return"),
         }
     }
 }
@@ -175,12 +158,95 @@ impl FromStr for Command {
                 }
             }
 
+            (Some("Function"), Some(name), Some(n_vars)) => {
+                let n_vars: u16 = n_vars
+                    .parse()
+                    .map_err(|_| ParseError::MissingVarCount(n_vars.to_string()))?;
+                let name = name.to_string();
+
+                Ok(Command::Function {
+                    function: Fn::Function { name, n_vars },
+                })
+            }
+            (Some("Call"), Some(function), Some(n_args)) => {
+                let n_args: u16 = n_args
+                    .parse()
+                    .map_err(|_| ParseError::MissingArgCount(n_args.to_string()))?;
+                let function = function.to_string();
+
+                Ok(Command::Function {
+                    function: Fn::Call { function, n_args },
+                })
+            }
+            (Some("return"), None, None) => Ok(Command::Function {
+                function: Fn::Return,
+            }),
+
             (Some(command), None, None) => command
-                .parse::<Op>()
-                .map(Command::Operation)
+                .parse::<OP>()
+                .map(|operation| Command::Operation { operation })
                 .map_err(|_| ParseError::UnknownCommand(command.to_string())),
 
             _ => Err(ParseError::UnknownCommand(s.to_string())),
+        }
+    }
+}
+
+impl FromStr for Segment {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "constant" => Ok(Self::Constant),
+            "local" => Ok(Self::Local),
+            "argument" => Ok(Self::Argument),
+            "this" => Ok(Self::This),
+            "that" => Ok(Self::That),
+            "static" => Ok(Self::Static),
+            "temp" => Ok(Self::Temp),
+            "pointer" => Ok(Self::Pointer),
+
+            _ => Err(()),
+        }
+    }
+}
+
+impl FromStr for OP {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "add" => Ok(Self::Add),
+            "sub" => Ok(Self::Sub),
+            "neg" => Ok(Self::Neg),
+            "eq" => Ok(Self::Eq),
+            "gt" => Ok(Self::Gt),
+            "lt" => Ok(Self::Lt),
+            "and" => Ok(Self::And),
+            "or" => Ok(Self::Or),
+            "not" => Ok(Self::Not),
+
+            _ => Err(()),
+        }
+    }
+}
+
+impl FromStr for BR {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "label" => Ok(Self::Label {
+                label: String::new(),
+            }),
+            "goto" => Ok(Self::Jump {
+                label: String::new(),
+            }),
+            "if-goto" => Ok(Self::JumpIf {
+                label: String::new(),
+            }),
+
+            _ => Err(()),
         }
     }
 }

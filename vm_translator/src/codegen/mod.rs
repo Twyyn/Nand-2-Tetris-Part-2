@@ -3,7 +3,7 @@ mod operation;
 
 use crate::{
     codegen::{memory::Memory, operation::Operation},
-    parser::command::{Command, Op, Segment},
+    parser::command::{Command, OP, Segment},
 };
 
 #[derive(Debug, Default)]
@@ -22,7 +22,9 @@ impl CodeGen {
                 Self::memory(segment, index, filename).push_to_asm()
             }
             Command::Pop { segment, index } => Self::memory(segment, index, filename).pop_to_asm(),
-            Command::Operation(operation) => self.operation(operation).to_asm(),
+            Command::Operation { operation } => self.operation(operation).to_asm(),
+            Command::Branch { branch } => todo!(),
+            Command::Function { function } => todo!(),
         };
 
         format!("// {command} //\n{asm}")
@@ -40,24 +42,24 @@ impl CodeGen {
         }
     }
 
-    fn operation(&mut self, operation: Op) -> Operation {
+    fn operation(&mut self, operation: OP) -> Operation {
         match operation {
-            Op::Add => Operation::Add,
-            Op::Sub => Operation::Sub,
-            Op::Neg => Operation::Neg,
-            Op::Eq | Op::Gt | Op::Lt => {
+            OP::Add => Operation::Add,
+            OP::Sub => Operation::Sub,
+            OP::Neg => Operation::Neg,
+            OP::Eq | OP::Gt | OP::Lt => {
                 let label = self.label_count;
                 self.label_count += 1;
                 match operation {
-                    Op::Eq => Operation::Eq(label),
-                    Op::Gt => Operation::Gt(label),
-                    Op::Lt => Operation::Lt(label),
+                    OP::Eq => Operation::Eq(label),
+                    OP::Gt => Operation::Gt(label),
+                    OP::Lt => Operation::Lt(label),
                     _ => unreachable!(),
                 }
             }
-            Op::And => Operation::And,
-            Op::Or => Operation::Or,
-            Op::Not => Operation::Not,
+            OP::And => Operation::And,
+            OP::Or => Operation::Or,
+            OP::Not => Operation::Not,
         }
     }
 
