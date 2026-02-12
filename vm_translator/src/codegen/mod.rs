@@ -1,9 +1,9 @@
 mod memory;
 mod operation;
 
-use crate::parser::command::{Command, OP, Segment};
-use memory::Memory;
-use operation::Operation;
+use crate::parser::command::{Command, Op};
+use memory::{pop_to_asm, push_to_asm};
+use operation::op_to_asm;
 
 #[derive(Debug, Default)]
 pub struct CodeGen {
@@ -26,8 +26,7 @@ impl CodeGen {
             Command::Branch(br) => todo!(),
             Command::Function(func) => todo!(),
         };
-
-        format!("// {command} //\n{asm}")
+        format!("// {command}\n{asm}")
     }
     fn next_label(&mut self, op: Op) -> u16 {
         match op {
