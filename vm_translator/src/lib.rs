@@ -1,7 +1,10 @@
 mod codegen;
+pub mod error;
 mod parser;
-use parser::command::{Command, OP, Segment};
 
+use codegen::CodeGen;
+use error::VMError;
+use parser::{Parser, command::Command};
 use std::{
     ffi::OsStr,
     fs,
@@ -17,25 +20,30 @@ pub struct VMTranslator {
 }
 
 impl VMTranslator {
-    pub fn new(filepath: &str) -> Result<Self, String> {
+    /// Creates a new `VMTranslator` from a `.vm` file path.
+    ///
+    /// # Errors
+    ///
+    /// Returns `VMError::InvalidInput` if the file extension is wrong or filename is invalid.
+    /// Returns `VMError::IO` if the file cannot be read.
+    /// Returns `VMError::Parse` if any VM command is invalid.
+    pub fn new(filepath: &str) -> Result<Self, VMError> {
         let filepath = Path::new(filepath);
 
         if filepath.extension() != Some(OsStr::new("vm")) {
-            return Err("File must have .vm extension".to_string());
+            return Err(VMError::InvalidInput(
+                "File must have .vm extension".to_string(),
+            ));
         }
 
         let filename = filepath
             .file_stem()
             .and_then(|s| s.to_str())
-            .ok_or("Invalid filename")?
+            .ok_or(VMError::InvalidInput("Invalid filename".to_string()))?
             .to_string();
 
-        let source = fs::read_to_string(filepath)
-            .map_err(|e| format!("Failed to read {}: {e}", filepath.to_string_lossy()))?;
-
-        let commands = Parser::parse(&source)
-            .map_err(|(line, e)| format!("Parse error at line {line}: {e}"))?;
-
+        let source = fs::read_to_string(filepath)?;
+        let commands = Parser::parse(&source)?;
         let output_path = filepath.with_extension("asm");
 
         Ok(Self {
@@ -45,23 +53,22 @@ impl VMTranslator {
         })
     }
 
-    /// Translates VM commands to assembly code and writes to output file.
+    /// Translates the VM commands to assembly and writes to the output file.
     ///
     /// # Errors
     ///
-    /// Returns an error if the output file cannot be created or written to.
-    pub fn run(self) -> Result<(), String> {
+    /// Returns an `VMError` if writing to the output file fails.
+    pub fn run(self) -> Result<(), VMError> {
         let mut codegen = CodeGen::new();
 
-        let file = fs::File::create(&self.output_path)
-            .map_err(|e| format!("Could not create file: {e}"))?;
+        let file = fs::File::create(&self.output_path)?;
         let mut writer = BufWriter::new(file);
 
-        for cmd in self.commands {
-            let asm = codegen.translate(cmd, &self.filename);
-            writeln!(writer, "{asm}").map_err(|e| e.to_string())?;
+        for command in self.commands {
+            let asm = codegen.translate(command, &self.filename);
+            writeln!(writer, "{asm}")?;
         }
-        writer.flush().map_err(|e| e.to_string())?;
+        writer.flush()?;
 
         Ok(())
     }

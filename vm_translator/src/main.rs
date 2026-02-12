@@ -1,9 +1,9 @@
-use std;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let filepath = std::env::args()
+        .nth(1)
+        .ok_or("Usage: vm_translator <file.vm>")?;
 
-fn main() -> Result<(), String> {
-    let args: Vec<String> = std::env::args().collect();
-    let filepath = args.get(1).expect("Usage: vm_translator <file.vm>");
-
-    vm_translator::VMTranslator::new(filepath)?.run()
+    vm_translator::VMTranslator::new(&filepath)?.run()?;
+    //println!("{:?}", vm_translator::VMTranslator::new(&filepath)?);
+    Ok(())
 }
-
