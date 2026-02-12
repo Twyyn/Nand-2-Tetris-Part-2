@@ -1,5 +1,4 @@
-use super::error::ParseError;
-
+use crate::error::ParseError;
 use std::{
     fmt::{self},
     str::FromStr,
@@ -65,7 +64,7 @@ impl fmt::Display for Command {
     }
 }
 
-impl<'a> fmt::Display for Segment {
+impl fmt::Display for Segment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Constant => write!(f, "constant"),
@@ -80,7 +79,7 @@ impl<'a> fmt::Display for Segment {
     }
 }
 
-impl<'a> fmt::Display for OP {
+impl fmt::Display for OP {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
             Self::Add => write!(f, "add"),
@@ -177,7 +176,7 @@ impl FromStr for Command {
                 },
             }),
             /* Function Commands */
-            (Some("Function"), Some(name), Some(n_vars)) => {
+            (Some("function"), Some(name), Some(n_vars)) => {
                 let n_vars: u16 = n_vars
                     .parse()
                     .map_err(|_| ParseError::MissingVarCount(n_vars.to_string()))?;
@@ -189,7 +188,7 @@ impl FromStr for Command {
                     },
                 })
             }
-            (Some("Call"), Some(function), Some(n_args)) => {
+            (Some("call"), Some(function), Some(n_args)) => {
                 let n_args: u16 = n_args
                     .parse()
                     .map_err(|_| ParseError::MissingArgCount(n_args.to_string()))?;
@@ -208,7 +207,7 @@ impl FromStr for Command {
             (Some(command), None, None) => command
                 .parse::<OP>()
                 .map(|operation| Command::Operation { operation })
-                .map_err(|_| ParseError::UnknownCommand(command.to_string())),
+                .map_err(|()| ParseError::UnknownCommand(command.to_string())),
 
             _ => Err(ParseError::UnknownCommand(s.to_string())),
         }
