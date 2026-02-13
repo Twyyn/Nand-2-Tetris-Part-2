@@ -31,8 +31,8 @@ impl CodeGen {
         };
         format!("{comment}\n{asm}")
     }
-    fn next_label(&mut self, op: OperationCommand) -> u16 {
-        match op {
+    fn next_label(&mut self, operation_command: OperationCommand) -> u16 {
+        match operation_command {
             OperationCommand::Eq | OperationCommand::Gt | OperationCommand::Lt => {
                 let label = self.label_count;
                 self.label_count += 1;

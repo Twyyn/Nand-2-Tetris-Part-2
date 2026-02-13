@@ -28,7 +28,7 @@ fn get_vm_files(dir: &Path) -> Result<Vec<PathBuf>, VMError> {
         .collect())
 }
 
-fn extract_stem(file_path: &Path) -> Result<String, VMError> {
+fn extract_name(file_path: &Path) -> Result<String, VMError> {
     Ok(file_path
         .file_stem()
         .and_then(|s| s.to_str())
@@ -45,7 +45,7 @@ fn output_path_from_dir(dir_path: &Path) -> Result<PathBuf, VMError> {
 
 #[derive(Debug)]
 pub struct VMTranslator {
-    file_commands: Vec<SourceFile>,
+    source_files: Vec<SourceFile>,
     output_path: PathBuf,
 }
 
@@ -84,19 +84,16 @@ impl VMTranslator {
             return Err(VMError::InvalidInput("No .vm files found".to_string()));
         }
 
-        let mut file_commands: Vec<SourceFile> = Vec::new();
+        let mut source_files: Vec<SourceFile> = Vec::new();
         for file in &vm_files {
             let source = fs::read_to_string(file)?;
-            let filename = extract_stem(file)?;
+            let name = extract_name(file)?;
             let commands = Parser::parse(&source)?;
-            file_commands.push(SourceFile {
-                name: filename,
-                commands,
-            });
+            source_files.push(SourceFile { name, commands });
         }
 
         Ok(Self {
-            file_commands,
+            source_files,
             output_path,
         })
     }
@@ -112,10 +109,11 @@ impl VMTranslator {
         let file = fs::File::create(&self.output_path)?;
         let mut writer = BufWriter::new(file);
 
-        for source_file in self.file_commands {
-            writeln!(writer, "// Filename: {}.asm", source_file.name)?;
+        for source_file in self.source_files {
+            let name = source_file.name;
+            writeln!(writer, "// Filename: {name}.asm")?;
             for command in source_file.commands {
-                let asm = codegen.translate(command, &source_file.name);
+                let asm = codegen.translate(command, &name);
                 writeln!(writer, "{asm}")?;
             }
         }
