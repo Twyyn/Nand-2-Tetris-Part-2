@@ -1,11 +1,11 @@
-mod branch;
+mod branching;
 mod memory;
 mod operations;
 
 use crate::parser::command::{Command, OperationCommand};
-use branch::compile_branch;
+use branching::compile_branch;
 use memory::{compile_pop, compile_push};
-use operations::compile_op;
+use operations::compile_operation;
 
 #[derive(Debug, Default)]
 pub struct CodeGen {
@@ -24,9 +24,9 @@ impl CodeGen {
             Command::Pop { segment, index } => compile_pop(segment, index, filename),
             Command::Operation(operation_command) => {
                 let label = self.next_label(operation_command);
-                compile_op(operation_command, label)
+                compile_operation(operation_command, label)
             }
-            Command::Branch(branch_command) => compile_branch(branch_command),
+            Command::Branching(branch_command) => compile_branch(branch_command),
             Command::Function(_function_command) => todo!(),
         };
         format!("{comment}\n{asm}")

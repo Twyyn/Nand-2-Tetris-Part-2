@@ -10,7 +10,7 @@ pub enum Command {
     Push { segment: Segment, index: u16 },
     Pop { segment: Segment, index: u16 },
     Operation(OperationCommand),
-    Branch(BranchCommand),
+    Branching(BranchCommand),
     Function(FunctionCommand),
 }
 
@@ -59,7 +59,7 @@ impl fmt::Display for Command {
             Self::Push { segment, index } => write!(f, "push {segment} {index}"),
             Self::Pop { segment, index } => write!(f, "pop {segment} {index}"),
             Self::Operation(operation_command) => write!(f, "{operation_command}"),
-            Self::Branch(branch_command) => write!(f, "{branch_command}"),
+            Self::Branching(branch_command) => write!(f, "{branch_command}"),
             Self::Function(function_command) => write!(f, "{function_command}"),
         }
     }
@@ -170,7 +170,7 @@ impl FromStr for Command {
             (Some(command @ ("label" | "goto" | "if-goto")), Some(label), None) => {
                 let label = label.to_string();
 
-                Ok(Command::Branch(match command {
+                Ok(Command::Branching(match command {
                     "label" => BranchCommand::Label { label },
                     "goto" => BranchCommand::Goto { label },
                     "if-goto" => BranchCommand::IfGoto { label },

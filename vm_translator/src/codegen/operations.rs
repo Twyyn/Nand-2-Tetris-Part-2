@@ -49,7 +49,7 @@ fn comparison_asm(prefix: &str, jump: &str, n: u16) -> String {
     )
 }
 
-pub fn compile_op(operation_command: OperationCommand, label: u16) -> String {
+pub fn compile_operation(operation_command: OperationCommand, label: u16) -> String {
     match operation_command {
         OperationCommand::Add => binary_op("+"),
         OperationCommand::Sub => binary_op("-"),
