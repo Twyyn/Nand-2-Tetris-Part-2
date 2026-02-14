@@ -7,4 +7,3 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //println!("{:?}", vm_translator::VMTranslator::new(&input_path)?);
     Ok(())
 }
-   
