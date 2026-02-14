@@ -48,8 +48,14 @@ pub enum BranchCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FunctionCommand {
-    Function { name: String, local_count: u16 },
-    Call { name: String, arg_count: u16 },
+    Function {
+        function_name: String,
+        local_count: u16,
+    },
+    Call {
+        function_name: String,
+        arg_count: u16,
+    },
     Return,
 }
 
@@ -109,8 +115,14 @@ impl fmt::Display for BranchCommand {
 impl fmt::Display for FunctionCommand {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Function { name, local_count } => write!(f, "function {name} {local_count}"),
-            Self::Call { name, arg_count } => write!(f, "call {name} {arg_count}"),
+            Self::Function {
+                function_name,
+                local_count,
+            } => write!(f, "function {function_name} {local_count}"),
+            Self::Call {
+                function_name,
+                arg_count,
+            } => write!(f, "call {function_name} {arg_count}"),
             Self::Return => write!(f, "return"),
         }
     }
@@ -184,7 +196,7 @@ impl FromStr for Command {
                     return Err(ParseError::UnknownCommand(s.to_string()));
                 }
 
-                let name = name.to_string();
+                let function_name = name.to_string();
                 let n: u16 = n.parse().map_err(|_| match command {
                     "function" => ParseError::InvalidVarCount(n.to_string()),
                     _ => ParseError::InvalidAarCount(n.to_string()),
@@ -192,10 +204,13 @@ impl FromStr for Command {
 
                 Ok(Command::Function(match command {
                     "function" => FunctionCommand::Function {
-                        name,
+                        function_name,
                         local_count: n,
                     },
-                    "call" => FunctionCommand::Call { name, arg_count: n },
+                    "call" => FunctionCommand::Call {
+                        function_name,
+                        arg_count: n,
+                    },
 
                     _ => unreachable!(),
                 }))

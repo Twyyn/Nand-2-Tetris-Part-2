@@ -1,4 +1,5 @@
 mod branching;
+mod functions;
 mod memory;
 mod operations;
 
