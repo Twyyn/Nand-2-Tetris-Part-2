@@ -5,8 +5,10 @@ mod operations;
 
 use crate::parser::command::{Command, OperationCommand};
 use branching::compile_branch;
-use memory::{compile_pop, compile_push};
+pub use memory::{compile_pop, compile_push};
 use operations::compile_operation;
+
+
 
 #[derive(Debug, Default)]
 pub struct CodeGen {

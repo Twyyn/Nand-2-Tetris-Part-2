@@ -14,6 +14,7 @@ const POP_STACK_TO_D: &str = "\
     D=M\n\
     ";
 
+
 fn segment_base_label(segment: Segment) -> &'static str {
     match segment {
         Segment::Local => "LCL",

@@ -10,177 +10,157 @@ pub fn compile_function(
             function_name,
             local_count,
         } => {
-            format!(
-                "\
-                ({filename}.{function_name})\n\
-                @SP\n\
-                D=M\n\
-                @LCL\n\
-                M=D\n\
-                @i\n\
-                M=0\n\
-                (PUSH_VAR_LOOP_START{label_count})\n\
-                @{local_count}\n\
-                D=A\n\
-                @i\n\
-                D=D-M\n\
-                @PUSH_VAR_LOOP_END_{label_count}\n\
-                D;JEQ\n\
-                @LCL\n\
-                D=M\n\
-                @i\n\
-                A=D+M\n\
-                M=0\n\
-                @i\n\
-                M=M+1\n\
-                (PUSH_VAR_LOOP_START{label_count})\n\
-                0;JMP\n\
-                @PUSH_VAR_LOOP_END_{label_count}\n\
-                @i\n\
-                D=M\n\
-                @SP\n\
-                M=D+M\n\
-                "
-            )
+            let mut asm = format!("({filename}.{function_name})\n");
+
+            if local_count <= 8 {
+                for _ in 0..local_count {
+                    asm.push_str(
+                        "@SP\n\
+                                A=M\n\
+                                M=0\n\
+                                @SP\n\
+                                M=M+1\n",
+                    );
+                }
+            } else {
+                asm.push_str(&format!(
+                    "@{local_count}\n\
+                     D=A\n\
+                     @R13\n\
+                     M=D\n\
+                     (INIT_LOCALS_{label_count})\n\
+                     @R13\n\
+                     D=M\n\
+                     @END_INIT_{label_count}\n\
+                     D;JEQ\n\
+                     @SP\n\
+                     A=M\n\
+                     M=0\n\
+                     @SP\n\
+                     M=M+1\n\
+                     @R13\n\
+                     M=M-1\n\
+                     @INIT_LOCALS_{label_count}\n\
+                     0;JMP\n\
+                     (END_INIT_{label_count})\n"
+                ));
+            }
+            asm
         }
+
         FunctionCommand::Call {
             function_name,
             arg_count,
         } => {
             format!(
-                "@Foo.bar&ret.1
-D=A
-
-@SP
-A=M
-M=D
-
-@SP
-M=M+1
-
-@LCL
-D=M
-
-@SP
-A=M
-M=D
-@SP
-M=M+1
-
-@ARG
-D=M
-
-@SP
-A=M
-M=D
-@SP
-M=M+1
-
-@THIS
-D=M
-
-@SP
-A=M
-M=D
-
-@SP
-M=M+1
-
-@THAT
-D=M
-
-@SP
-A=M
-M=D
-
-@SP
-M=M+1
-
-@SP
-D=M
-@5
-D=D-A
-
-@2
-D=D-A
-
-@ARG
-M=D
-
-@SP
-D=M
-
-@LCL
-M=D
-
-@Foo.bar
-0;JMP
-
-(Foo.bar&ret.1)
-
-
-
-"
+                "// call {function_name} {arg_count}\n\
+                 @{filename}.{function_name}$ret.{label_count}\n\
+                 D=A\n\
+                 @SP\n\
+                 A=M\n\
+                 M=D\n\
+                 @SP\n\
+                 M=M+1\n\
+                 // push LCL\n\
+                 @LCL\n\
+                 D=M\n\
+                 @SP\n\
+                 A=M\n\
+                 M=D\n\
+                 @SP\n\
+                 M=M+1\n\
+                 // push ARG\n\
+                 @ARG\n\
+                 D=M\n\
+                 @SP\n\
+                 A=M\n\
+                 M=D\n\
+                 @SP\n\
+                 M=M+1\n\
+                 // push THIS\n\
+                 @THIS\n\
+                 D=M\n\
+                 @SP\n\
+                 A=M\n\
+                 M=D\n\
+                 @SP\n\
+                 M=M+1\n\
+                 // push THAT\n\
+                 @THAT\n\
+                 D=M\n\
+                 @SP\n\
+                 A=M\n\
+                 M=D\n\
+                 @SP\n\
+                 M=M+1\n\
+                 // ARG = SP - 5 - arg_count\n\
+                 @SP\n\
+                 D=M\n\
+                 @5\n\
+                 D=D-A\n\
+                 @{arg_count}\n\
+                 D=D-A\n\
+                 @ARG\n\
+                 M=D\n\
+                 // LCL = SP\n\
+                 @SP\n\
+                 D=M\n\
+                 @LCL\n\
+                 M=D\n\
+                 @{filename}.{function_name}\n\
+                 0;JMP\n\
+                 ({filename}.{function_name}$ret.{label_count})\n\
+                 "
             )
         }
+
         FunctionCommand::Return => {
             format!(
-                "@LCL
-D=M
-@R13
-M=D
-
-
-@5
-A=D-A
-D=M
-@R14
-M=D
-
-
-@SP
-AM=M-1
-D=M
-@ARG
-A=M
-M=D
-
-
-@ARG
-D=M+1
-@SP
-M=D
-
-
-@R13
-AM=M-1
-D=M
-@THAT
-M=D
-
-
-@R13
-AM=M-1
-D=M
-@THIS
-M=D
-
-
-@R13
-AM=M-1
-D=M
-@ARG
-M=D
-
-@R13
-AM=M-1
-D=M
-@LCL
-M=D
-
-@R14
-A=M
-0;JMP"
+                "// return\n\
+                @LCL\n\
+                D=M\n\
+                @R13\n\
+                M=D\n\
+                @5\n\
+                A=D-A\n\
+                D=M\n\
+                @R14\n\
+                M=D\n\
+                @SP\n\
+                AM=M-1\n\
+                D=M\n\
+                @ARG\n\
+                A=M\n\
+                M=D\n\
+                @ARG\n\
+                D=M+1\n\
+                @SP\n\
+                M=D\n\
+                @R13\n\
+                AM=M-1\n\
+                D=M\n\
+                @THAT\n\
+                M=D\n\
+                @R13\n\
+                AM=M-1\n\
+                D=M\n\
+                @THIS\n\
+                M=D\n\
+                 // ARG = *(frame - 3)\n\
+                 @R13\n\
+                 AM=M-1\n\
+                 D=M\n\
+                 @ARG\n\
+                 M=D\n\
+                 @R13\n\
+                 AM=M-1\n\
+                 D=M\n\
+                 @LCL\n\
+                 M=D\n\
+                 @R14\n\
+                 A=M\n\
+                 0;JMP\n\
+                 "
             )
         }
     }
