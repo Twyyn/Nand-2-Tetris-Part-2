@@ -181,7 +181,7 @@ impl FromStr for Command {
                 }
             }
             // Branching Commands
-            (Some(command @ ("label" | "goto" | "if-goto")), Some(label), None) => {
+            (Some(command @ ("label" | "goto" | "if-goto")), Some(label), None) => {                
                 let label = label.to_string();
 
                 if !is_valid_label(&label) {

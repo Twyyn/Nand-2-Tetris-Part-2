@@ -1,9 +1,9 @@
 use crate::parser::command::Function;
 
-pub fn translate_function(function: Function, filename: &str, label_count: u16) -> String {
+pub fn translate_function(function: Function, label_count: u16) -> String {
     match function {
         Function::Declare { name, var_count } => {
-            let mut asm = format!("({filename}.{name})\n");
+            let mut asm = format!("({name})\n");
 
             if var_count <= 8 {
                 for _ in 0..var_count {
@@ -44,7 +44,7 @@ pub fn translate_function(function: Function, filename: &str, label_count: u16) 
         Function::Call { name, arg_count } => {
             format!(
                 "// call {name} {arg_count}\n\
-                 @{filename}.{name}$ret.{label_count}\n\
+                 @{name}$ret.{label_count}\n\
                  D=A\n\
                  @SP\n\
                  A=M\n\
@@ -97,9 +97,9 @@ pub fn translate_function(function: Function, filename: &str, label_count: u16) 
                  D=M\n\
                  @LCL\n\
                  M=D\n\
-                 @{filename}.{name}\n\
+                 @{name}$ret.{label_count}\n\
                  0;JMP\n\
-                 ({filename}.{name}$ret.{label_count})\n\
+                 ({name}$ret.{label_count}$ret.{label_count})\n\
                  "
             )
         }
