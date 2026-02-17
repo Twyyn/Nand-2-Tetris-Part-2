@@ -1,5 +1,5 @@
-use crate::codegen::UniqueLabel;
 use crate::parser::command::Function;
+use std::fmt::Write;
 
 const RETURN_ASM: &str = "\
     // return\n\
@@ -46,31 +46,26 @@ const RETURN_ASM: &str = "\
     A=M\n\
     0;JMP\n";
 
-pub fn translate_function(function: Function, label: UniqueLabel) -> String {
+pub fn translate_function(function: Function, label: u16) -> String {
     match function {
         Function::Declare { name, var_count } => {
             let mut asm = format!("({name})\n");
 
             if var_count <= 8 {
                 for _ in 0..var_count {
-                    asm.push_str(
-                        "@SP\n\
-                                A=M\n\
-                                M=0\n\
-                                @SP\n\
-                                M=M+1\n",
-                    );
+                    asm.push_str("@SP\nA=M\nM=0\n@SP\nM=M+1\n");
                 }
             } else {
-                asm.push_str(&format!(
+                let _ = write!(
+                    asm,
                     "@{var_count}\n\
                      D=A\n\
                      @R13\n\
                      M=D\n\
-                     (INIT_LOCALS_{label:?})\n\
+                     (INIT_LOCALS_{label})\n\
                      @R13\n\
                      D=M\n\
-                     @END_INIT_{label:?}\n\
+                     @END_INIT_{label}\n\
                      D;JEQ\n\
                      @SP\n\
                      A=M\n\
@@ -79,18 +74,19 @@ pub fn translate_function(function: Function, label: UniqueLabel) -> String {
                      M=M+1\n\
                      @R13\n\
                      M=M-1\n\
-                     @INIT_LOCALS_{label:?}\n\
+                     @INIT_LOCALS_{label}\n\
                      0;JMP\n\
-                     (END_INIT_{label:?})\n"
-                ));
+                     (END_INIT_{label})\n"
+                );
             }
             asm
         }
 
         Function::Call { name, arg_count } => {
-            let return_label = label.return_label(&name);
-
-            format!(
+            let return_label = format!("{name}$ret.{label}");
+            let mut asm = String::new();
+            let _ = write!(
+                &mut asm,
                 "// call {name} {arg_count}\n\
                  @{return_label}\n\
                  D=A\n\
@@ -149,7 +145,8 @@ pub fn translate_function(function: Function, label: UniqueLabel) -> String {
                  0;JMP\n\
                  ({return_label})\n\
                  "
-            )
+            );
+            asm
         }
 
         Function::Return => RETURN_ASM.to_string(),

@@ -1,30 +1,15 @@
-use crate::{codegen::UniqueLabel, parser::command::Operation};
-
+use crate::parser::command::Operation;
 
 fn binary_op(operation: &str) -> String {
-    format!(
-        "\
-        @SP\n\
-        AM=M-1\n\
-        D=M\n\
-        A=A-1\n\
-        M=M{operation}D\n\
-        "
-    )
+    format!("@SP\nAM=M-1\nD=M\nA=A-1\nM=M{operation}D\n")
 }
 
 fn unary_op(operation: &str) -> String {
-    format!(
-        "\
-        @SP\n\
-        A=M-1\n\
-        M={operation}M\n\
-        "
-    )
+    format!("@SP\nA=M-1\nM={operation}M\n")
 }
 
 fn comparison_asm(prefix: &str, jump: &str, n: u16) -> String {
-    let (xpos_yneg_result, xneg_ypos_result) = match jump {
+    let (x, y) = match jump {
         "JGT" => ("-1", "0"),
         "JLT" => ("0", "-1"),
         "JEQ" => ("0", "0"),
@@ -32,27 +17,22 @@ fn comparison_asm(prefix: &str, jump: &str, n: u16) -> String {
     };
 
     format!(
-        // Pop y into R14
         "@SP\n\
          AM=M-1\n\
          D=M\n\
          @R14\n\
          M=D\n\
-         // Pop x into R13\n\
          @SP\n\
          AM=M-1\n\
          D=M\n\
          @R13\n\
          M=D\n\
-         // Check sign of x\n\
          @{prefix}_X_NEG_{n}\n\
          D;JLT\n\
-         // x >= 0: check y\n\
          @R14\n\
          D=M\n\
          @{prefix}_DIFF_XPOS_{n}\n\
          D;JLT\n\
-         // Both non-negative: safe subtract\n\
          @{prefix}_SAFE_{n}\n\
          0;JMP\n\
          ({prefix}_X_NEG_{n})\n\
@@ -61,7 +41,6 @@ fn comparison_asm(prefix: &str, jump: &str, n: u16) -> String {
          D=M\n\
          @{prefix}_DIFF_XNEG_{n}\n\
          D;JGE\n\
-         // Both negative: safe subtract\n\
          ({prefix}_SAFE_{n})\n\
          @R13\n\
          D=M\n\
@@ -75,17 +54,15 @@ fn comparison_asm(prefix: &str, jump: &str, n: u16) -> String {
          @{prefix}_END_{n}\n\
          0;JMP\n\
          ({prefix}_DIFF_XPOS_{n})\n\
-         // x >= 0, y < 0: x is greater\n\
          @SP\n\
          A=M\n\
-         M={xpos_yneg_result}\n\
+         M={x}\n\
          @{prefix}_END_{n}\n\
          0;JMP\n\
          ({prefix}_DIFF_XNEG_{n})\n\
-         // x < 0, y >= 0: y is greater\n\
          @SP\n\
          A=M\n\
-         M={xneg_ypos_result}\n\
+         M={y}\n\
          @{prefix}_END_{n}\n\
          0;JMP\n\
          ({prefix}_TRUE_{n})\n\

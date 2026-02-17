@@ -6,15 +6,11 @@ use std::{
 };
 
 fn is_valid_label(s: &str) -> bool {
-    if s.is_empty() {
-        return false;
-    }
-    let first = s.chars().next().unwrap();
-    if !first.is_ascii_alphabetic() && first != '_' && first != '.' && first != ':' {
-        return false;
-    }
-    s.chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.' || c == ':')
+    let mut chars = s.chars();
+    chars
+        .next()
+        .is_some_and(|c| c.is_ascii_alphabetic() || matches!(c, '_' | '.' | ':'))
+        && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | ':'))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -181,7 +177,7 @@ impl FromStr for Command {
                 }
             }
             // Branching Commands
-            (Some(command @ ("label" | "goto" | "if-goto")), Some(label), None) => {                
+            (Some(command @ ("label" | "goto" | "if-goto")), Some(label), None) => {
                 let label = label.to_string();
 
                 if !is_valid_label(&label) {
@@ -220,7 +216,8 @@ impl FromStr for Command {
                     _ => unreachable!(),
                 }))
             }
-            (Some(_command @ "return"), None, None) => Ok(Command::Function(Function::Return)),
+            (Some("return"), None, None) => Ok(Command::Function(Function::Return)),
+
             (Some(command @ "return"), Some(s), None) => Err(ParseError::UnknownCommand(format!(
                 "Unknown command: {command} {s}"
             ))),

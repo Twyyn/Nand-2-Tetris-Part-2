@@ -1,5 +1,4 @@
 mod arithmetic;
-mod bootstrap;
 mod branching;
 mod functions;
 mod memory;
@@ -13,7 +12,7 @@ use memory::{translate_pop, translate_push};
 #[derive(Debug, Default)]
 pub struct CodeGen {
     label_count: u16,
-    current_function: String,
+    current_function: Option<String>,
 }
 
 impl CodeGen {
@@ -21,46 +20,49 @@ impl CodeGen {
         Self::default()
     }
 
-    pub fn translate(&mut self, command: Command, filename: &str, label: UniqueLabel) -> String {
+    pub fn translate(&mut self, command: Command, filename: &str) -> String {
         match command {
             Command::Push { segment, index } => translate_push(segment, index, filename),
             Command::Pop { segment, index } => translate_pop(segment, index, filename),
             Command::Arithmetic(operation) => {
                 let label = self.next_label();
-                translate_arithmetic(operation, label.id)
+                translate_arithmetic(operation, label)
             }
-            Command::Branching(branch) => translate_branch(branch, &self.current_function),
+            Command::Branching(branch) => {
+                translate_branch(branch, self.current_function.as_deref().unwrap_or(""))
+            }
             Command::Function(function) => {
-                let label = self.next_label();
-                match function {
-                    Function::Declare { name, var_count } => {
-                        self.current_function = name.clone();
-                        translate_function(Function::Declare { name, var_count }, label)
-                    }
-                    other => translate_function(other, label),
+                if let Function::Declare { ref name, .. } = function {
+                    self.current_function = Some(name.clone());
                 }
+                let label = self.next_label();
+                translate_function(function, label)
             }
         }
     }
 
-    fn next_label(&mut self) -> UniqueLabel {
-        let id = self.label_count;
+    pub fn emit_bootstrap(&mut self) -> String {
+        let label = self.next_label();
+        let call_sys_init = translate_function(
+            Function::Call {
+                name: "Sys.init".to_string(),
+                arg_count: 0,
+            },
+            label,
+        );
+        format!(
+            "// Bootstrap\n\
+             @256\n\
+             D=A\n\
+             @SP\n\
+             M=D\n\
+             {call_sys_init}"
+        )
+    }
+
+    fn next_label(&mut self) -> u16 {
+        let n = self.label_count;
         self.label_count += 1;
-        UniqueLabel { id }
-    }
-}
-
-#[derive(Debug)]
-pub struct UniqueLabel {
-    id: u16,
-}
-
-impl UniqueLabel {
-    pub fn prefixed(&self, prefix: &str) -> String {
-        format!("{prefix}_{}", self.id)
-    }
-
-    pub fn return_label(&self, fn_name: &str) -> String {
-        format!("{fn_name}$ret.{}", self.id)
+        n
     }
 }

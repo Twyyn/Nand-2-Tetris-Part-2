@@ -2,7 +2,6 @@ mod codegen;
 pub mod error;
 mod parser;
 
-use crate::codegen::UniqueLabel;
 use codegen::CodeGen;
 use error::VMError;
 use parser::{command::Command, parse};
@@ -48,6 +47,7 @@ fn output_path_from_dir(dir_path: &Path) -> Result<PathBuf, VMError> {
 pub struct VMTranslator {
     source_files: Vec<SourceFile>,
     output_path: PathBuf,
+    needs_bootstrap: bool,
 }
 
 impl VMTranslator {
@@ -60,11 +60,13 @@ impl VMTranslator {
     /// Returns `VMError::Parse` if any VM command is invalid.
     pub fn new(input_path: &str) -> Result<Self, VMError> {
         let input_path = Path::new(input_path);
+        let mut needs_bootstrap = false;
 
         let (vm_files, output_path) = match input_path {
             _ if input_path.is_dir() => {
                 let vm_files = get_vm_files(input_path)?;
                 let output_path = output_path_from_dir(input_path)?;
+                needs_bootstrap = true;
 
                 (vm_files, output_path)
             }
@@ -96,6 +98,7 @@ impl VMTranslator {
         Ok(Self {
             source_files,
             output_path,
+            needs_bootstrap,
         })
     }
 
@@ -104,17 +107,21 @@ impl VMTranslator {
     /// # Errors
     ///
     /// Returns an `VMError` if writing to the output file fails.
-    pub fn run(self) -> Result<(), VMError> {
-        let mut codegen = CodeGen::default();
+    pub fn translate(self) -> Result<(), VMError> {
+        let mut codegen = CodeGen::new();
 
         let file = fs::File::create(&self.output_path)?;
         let mut writer = BufWriter::new(file);
+
+        if self.needs_bootstrap {
+            writeln!(writer, "{}", codegen.emit_bootstrap())?;
+        }
 
         for source_file in self.source_files {
             let name = source_file.name;
             writeln!(writer, "// Filename: {name}.asm")?;
             for command in source_file.commands {
-                let asm = codegen.translate(command, &name, &mut label_gen);
+                let asm = codegen.translate(command, &name);
                 writeln!(writer, "{asm}")?;
             }
         }
