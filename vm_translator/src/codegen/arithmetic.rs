@@ -36,7 +36,6 @@ fn comparison_asm(prefix: &str, jump: &str, n: u16) -> String {
          @{prefix}_SAFE_{n}\n\
          0;JMP\n\
          ({prefix}_X_NEG_{n})\n\
-         // x < 0: check y\n\
          @R14\n\
          D=M\n\
          @{prefix}_DIFF_XNEG_{n}\n\

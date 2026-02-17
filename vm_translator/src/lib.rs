@@ -114,15 +114,15 @@ impl VMTranslator {
         let mut writer = BufWriter::new(file);
 
         if self.needs_bootstrap {
-            writeln!(writer, "{}", codegen.emit_bootstrap())?;
+            write!(writer, "{}", codegen.emit_bootstrap())?;
         }
 
         for source_file in self.source_files {
             let name = source_file.name;
-            writeln!(writer, "// Filename: {name}.asm")?;
+            writeln!(writer, "// Filename: {name}.vm")?;
             for command in source_file.commands {
                 let asm = codegen.translate(command, &name);
-                writeln!(writer, "{asm}")?;
+                write!(writer, "{asm}")?;
             }
         }
         writer.flush()?;

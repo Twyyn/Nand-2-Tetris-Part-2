@@ -44,7 +44,8 @@ const RETURN_ASM: &str = "\
     M=D\n\
     @R14\n\
     A=M\n\
-    0;JMP\n";
+    0;JMP\n\
+    ";
 
 pub fn translate_function(function: Function, label: u16) -> String {
     match function {
@@ -58,25 +59,27 @@ pub fn translate_function(function: Function, label: u16) -> String {
             } else {
                 let _ = write!(
                     asm,
-                    "@{var_count}\n\
-                     D=A\n\
-                     @R13\n\
-                     M=D\n\
-                     (INIT_LOCALS_{label})\n\
-                     @R13\n\
-                     D=M\n\
-                     @END_INIT_{label}\n\
-                     D;JEQ\n\
-                     @SP\n\
-                     A=M\n\
-                     M=0\n\
-                     @SP\n\
-                     M=M+1\n\
-                     @R13\n\
-                     M=M-1\n\
-                     @INIT_LOCALS_{label}\n\
-                     0;JMP\n\
-                     (END_INIT_{label})\n"
+                    "\
+                    @{var_count}\n\
+                    D=A\n\
+                    @R13\n\
+                    M=D\n\
+                    (INIT_LOCALS_{label})\n\
+                    @R13\n\
+                    D=M\n\
+                    @END_INIT_{label}\n\
+                    D;JEQ\n\
+                    @SP\n\
+                    A=M\n\
+                    M=0\n\
+                    @SP\n\
+                    M=M+1\n\
+                    @R13\n\
+                    M=M-1\n\
+                    @INIT_LOCALS_{label}\n\
+                    0;JMP\n\
+                    (END_INIT_{label})\n\
+                    "
                 );
             }
             asm
@@ -84,10 +87,9 @@ pub fn translate_function(function: Function, label: u16) -> String {
 
         Function::Call { name, arg_count } => {
             let return_label = format!("{name}$ret.{label}");
-            let mut asm = String::new();
-            let _ = write!(
-                &mut asm,
-                "// call {name} {arg_count}\n\
+            format!(
+                "\
+                // call {name} {arg_count}\n\
                  @{return_label}\n\
                  D=A\n\
                  @SP\n\
@@ -95,7 +97,6 @@ pub fn translate_function(function: Function, label: u16) -> String {
                  M=D\n\
                  @SP\n\
                  M=M+1\n\
-                 // push LCL\n\
                  @LCL\n\
                  D=M\n\
                  @SP\n\
@@ -103,7 +104,6 @@ pub fn translate_function(function: Function, label: u16) -> String {
                  M=D\n\
                  @SP\n\
                  M=M+1\n\
-                 // push ARG\n\
                  @ARG\n\
                  D=M\n\
                  @SP\n\
@@ -111,7 +111,6 @@ pub fn translate_function(function: Function, label: u16) -> String {
                  M=D\n\
                  @SP\n\
                  M=M+1\n\
-                 // push THIS\n\
                  @THIS\n\
                  D=M\n\
                  @SP\n\
@@ -119,7 +118,6 @@ pub fn translate_function(function: Function, label: u16) -> String {
                  M=D\n\
                  @SP\n\
                  M=M+1\n\
-                 // push THAT\n\
                  @THAT\n\
                  D=M\n\
                  @SP\n\
@@ -127,7 +125,6 @@ pub fn translate_function(function: Function, label: u16) -> String {
                  M=D\n\
                  @SP\n\
                  M=M+1\n\
-                 // ARG = SP - 5 - arg_count\n\
                  @SP\n\
                  D=M\n\
                  @5\n\
@@ -136,7 +133,6 @@ pub fn translate_function(function: Function, label: u16) -> String {
                  D=D-A\n\
                  @ARG\n\
                  M=D\n\
-                 // LCL = SP\n\
                  @SP\n\
                  D=M\n\
                  @LCL\n\
@@ -145,8 +141,7 @@ pub fn translate_function(function: Function, label: u16) -> String {
                  0;JMP\n\
                  ({return_label})\n\
                  "
-            );
-            asm
+            )
         }
 
         Function::Return => RETURN_ASM.to_string(),
