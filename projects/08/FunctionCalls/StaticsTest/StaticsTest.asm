@@ -56,9 +56,8 @@ M=D
 (Sys.init$ret.0)
 // Filename: Class1.vm
 (Class1.set)
-@ARG
-A=M
-D=M
+@0
+D=A
 @SP
 A=M
 M=D
@@ -91,7 +90,6 @@ A=M
 M=D
 @SP
 M=M+1
-// return
 @LCL
 D=M
 @R13
@@ -154,7 +152,6 @@ AM=M-1
 D=M
 A=A-1
 M=M-D
-// return
 @LCL
 D=M
 @R13
@@ -199,9 +196,8 @@ A=M
 0;JMP
 // Filename: Class2.vm
 (Class2.set)
-@ARG
-A=M
-D=M
+@0
+D=A
 @SP
 A=M
 M=D
@@ -234,7 +230,6 @@ A=M
 M=D
 @SP
 M=M+1
-// return
 @LCL
 D=M
 @R13
@@ -297,7 +292,6 @@ AM=M-1
 D=M
 A=A-1
 M=M-D
-// return
 @LCL
 D=M
 @R13

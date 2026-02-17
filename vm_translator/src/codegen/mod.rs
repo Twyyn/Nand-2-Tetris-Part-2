@@ -22,26 +22,24 @@ impl CodeGen {
         Self::default()
     }
 
-    pub fn translate<W: Write>(
+    pub fn translate(
         &mut self,
         writer: &mut impl Write,
         command: Command,
         filename: &str,
     ) -> Result<()> {
         match command {
-            Command::Push { segment, index } => {
-                translate_push(writer, segment, index, filename)
-            }
-            Command::Pop { segment, index } => {
-                translate_pop(writer, segment, index, filename)
-            }
+            Command::Push { segment, index } => translate_push(writer, segment, index, filename),
+            Command::Pop { segment, index } => translate_pop(writer, segment, index, filename),
             Command::Arithmetic(operation) => {
                 let label = self.next_label();
                 translate_arithmetic(writer, operation, label)
             }
-            Command::Branching(branch) => {
-                    translate_branch(writer, branch, self.current_function.as_deref().unwrap_or("GLOBAL"))
-            }
+            Command::Branching(branch) => translate_branch(
+                writer,
+                branch,
+                self.current_function.as_deref().unwrap_or("GLOBAL"),
+            ),
             Command::Function(function) => {
                 if let Function::Declare { ref name, .. } = function {
                     self.current_function = Some(name.clone());
@@ -54,14 +52,16 @@ impl CodeGen {
 
     pub fn emit_bootstrap(&mut self, writer: &mut impl Write) -> Result<()> {
         let label = self.next_label();
-        write!(writer,
+        write!(
+            writer,
             "// Bootstrap\n\
              @256\n\
              D=A\n\
              @SP\n\
              M=D\n"
         )?;
-        translate_function(writer,
+        translate_function(
+            writer,
             Function::Call {
                 name: "Sys.init".to_string(),
                 arg_count: 0,

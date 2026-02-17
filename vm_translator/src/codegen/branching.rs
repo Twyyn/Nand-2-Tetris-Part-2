@@ -9,7 +9,7 @@ pub fn translate_branch(
 ) -> Result<()> {
     match command {
         Branch::Label { label } => {
-            write!(writer, "({current_function}${label})\n")
+            writeln!(writer, "({current_function}${label})")
         }
         Branch::Goto { label } => {
             write!(

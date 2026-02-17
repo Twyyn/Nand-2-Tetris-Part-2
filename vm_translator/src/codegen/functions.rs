@@ -3,7 +3,6 @@ use crate::codegen::Result;
 use crate::parser::command::Function;
 
 const RETURN_ASM: &str = "\
-    // return\n\
     @LCL\n\
     D=M\n\
     @R13\n\
@@ -51,7 +50,7 @@ const RETURN_ASM: &str = "\
 pub fn translate_function(writer: &mut impl Write, function: Function, label: u16) -> Result<()> {
     match function {
         Function::Declare { name, var_count } => {
-            write!(writer, "({name})\n")?;
+            writeln!(writer, "({name})")?;
 
             if var_count <= 8 {
                 for _ in 0..var_count {
@@ -146,6 +145,6 @@ pub fn translate_function(writer: &mut impl Write, function: Function, label: u1
             )
         }
 
-        Function::Return => write!(writer, "{}", RETURN_ASM),
+        Function::Return => write!(writer, "{RETURN_ASM}"),
     }
 }

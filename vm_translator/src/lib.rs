@@ -130,7 +130,7 @@ impl VMTranslator {
             writeln!(writer, "// Filename: {name}.vm")?;
             for command in source_file.commands {
                 // Now writes directly to the buffer, zero allocations!
-                codegen.translate::<BufWriter<fs::File>>(&mut writer, command, &name)?;
+                codegen.translate(&mut writer, command, &name)?;
             }
         }
         writer.flush()?;
